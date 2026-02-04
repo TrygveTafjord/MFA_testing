@@ -6,3 +6,9 @@ The notebook aims to test:
 -   Reconstruction Fidelity - Calculate the reconstruction error in RMSE and SAM (Spectral Angle Mapper)
 -   Interpretability - Does the components represent different and new signals
 -   Class Interpretability - Assign a colour to each FA, and map the Hyperspectral image next to its rgb-image, do we see the same structures? 
+
+
+Includes: 
+Hypso package (GDAL wheel is necessery for it to run)
+torch
+glob
