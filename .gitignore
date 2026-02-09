@@ -208,3 +208,4 @@ __marimo__/
 
 data/testing/*.nc
 data/training/*.nc
+data/linearity_test/*.nc
