@@ -152,3 +152,28 @@ class MFA(nn.Module):
             n_params = (self.K - 1) + (self.K * self.D) + params_lambda + self.D
             
             return -2 * total_ll + n_params * math.log(n_samples)
+    
+    def initialize_parameters(self, X):
+        """
+        Initialize mu using K-Means++ (via scikit-learn) for better convergence.
+        """
+        from sklearn.cluster import KMeans
+        import numpy as np
+        
+        # Move data to CPU for sklearn
+        X_cpu = X.cpu().numpy()
+        
+        print("Initializing centers with K-Means...")
+        kmeans = KMeans(n_clusters=self.K, n_init=10, random_state=42)
+        labels = kmeans.fit_predict(X_cpu)
+        centroids = kmeans.cluster_centers_
+        
+        # Update the model's mu parameter
+        with torch.no_grad():
+            self.mu.data = torch.tensor(centroids, dtype=torch.float32).to(self.mu.device)
+            
+            # Optional: Initialize variance (Psi) based on cluster variance
+            # This helps if some clusters are much "tighter" than others
+            # For now, keeping Psi simple is okay, but Mu is critical.
+            
+        print("Initialization complete.")
