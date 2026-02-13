@@ -206,7 +206,4 @@ marimo/_static/
 marimo/_lsp/
 __marimo__/
 
-data/testing/*.nc
-data/training/*.nc
-data/linearity_test/*.nc
-data/l1d/*.nc
+data/*
