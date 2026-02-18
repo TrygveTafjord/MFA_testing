@@ -3,8 +3,8 @@ from hypso.write import write_l1d_nc_file, write_l1b_nc_file
 import glob
 
 data_dir = []
-data_dir.append(glob.glob('data/testing/*.nc'))
-data_dir.append(glob.glob('data/linearity_test/*.nc'))
+data_dir.append(glob.glob('data/new_data/*.nc'))
+#data_dir.append(glob.glob('data/linearity_test/*.nc'))
 print(f"Found {len(data_dir)} files.")
 
 for sublist in data_dir:
