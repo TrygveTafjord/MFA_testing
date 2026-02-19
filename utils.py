@@ -31,22 +31,7 @@ def calculate_sam(original, reconstructed, epsilon=1e-8):
     return sam_rad.mean().item()
 
 
-def extract_spatial_features(hsi_cube_np, window_size=3):
-
-    # Reshape to (Batch, Channels, Height, Width) for PyTorch 2D operations
-    cube_t = torch.from_numpy(hsi_cube_np).float().unsqueeze(0).permute(0, 3, 1, 2)
-    
-    pad = window_size // 2
-    
-    avg_pool = F.avg_pool2d(cube_t, kernel_size=window_size, stride=1, padding=pad)
-    
-    augmented_cube = torch.cat([cube_t, avg_pool], dim=1)
-    
-    return augmented_cube.squeeze(0).permute(1, 2, 0).numpy()
-
-
-
-def get_data(data_dir, data_product, target_total_samples, ADD_SPATIAL_INFO):
+def get_data(data_dir, data_product, target_total_samples):
     
     len_data_dir = len(data_dir)
     samples_per_file = target_total_samples // len_data_dir  
@@ -54,7 +39,7 @@ def get_data(data_dir, data_product, target_total_samples, ADD_SPATIAL_INFO):
 
     print(f"Aiming to extract ~{samples_per_file} pixels per file from {len_data_dir} files to reach a total of ~{target_total_samples} samples.")
 
-    i = 0
+    i = 1
     for file in data_dir:
         # Load Data
         try:
@@ -71,9 +56,6 @@ def get_data(data_dir, data_product, target_total_samples, ADD_SPATIAL_INFO):
                     data = satobj.l1d_cube.values.astype(np.float32)
                 case _:
                     raise ValueError(f"Unknown data product: {data_product}")
-
-            if ADD_SPATIAL_INFO:
-                data = extract_spatial_features(data)
 
             h, w, b = data.shape
             data_2d = data.reshape(-1, b) # Shape: (Total_Pixels_In_Image, 120)
@@ -103,3 +85,18 @@ def get_data(data_dir, data_product, target_total_samples, ADD_SPATIAL_INFO):
     print(f"Final Analysis Dataset Shape: {data.shape}")
 
     return data 
+
+
+
+def mean_center_data(data):
+    """Mean centers the data."""
+    mean = torch.mean(data, dim=0, keepdim=True)
+    centered_data = data - mean
+    
+    return centered_data, mean
+
+def l2_normalize_data(data, epsilon=1e-8):
+    """Performs L2 normalization on the data."""
+    norms = torch.norm(data, p=2, dim=1, keepdim=True)
+    normalized_data = data / (norms + epsilon)
+    return normalized_data
