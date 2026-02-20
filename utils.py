@@ -86,6 +86,33 @@ def get_data(data_dir, data_product, target_total_samples):
 
     return data 
 
+def reconstruct_mfa(model, X):
+    """Reconstructs X using the Component-Specific posterior expectation."""
+    with torch.no_grad():
+        log_resp, _ = model.e_step(X) 
+        responsibilities = torch.exp(log_resp) 
+        cluster_ids = torch.argmax(responsibilities, dim=1)
+        X_rec = torch.zeros_like(X)
+        
+        for k in range(model.K):
+            mask = (cluster_ids == k)
+            if mask.sum() == 0: continue
+            
+            X_k = X[mask]
+            X_k_centered = X_k - model.mu[k]
+            Lambda = model.Lambda[k] 
+            
+            psi_k = torch.exp(model.log_psi[k])
+            Psi_inv = torch.diag(1.0 / psi_k) 
+            
+            M = torch.inverse(torch.eye(model.q, device=X.device) + Lambda.T @ Psi_inv @ Lambda)
+            beta = M @ Lambda.T @ Psi_inv
+            z_k = (X_k_centered @ beta.T)
+            
+            X_rec[mask] = z_k @ Lambda.T + model.mu[k]
+            
+    return X_rec, cluster_ids
+
 
 
 def mean_center_data(data):

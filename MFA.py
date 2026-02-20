@@ -3,7 +3,7 @@ import torch.nn as nn
 import math
 
 class MFA(nn.Module):
-    def __init__(self, n_components, n_features, n_factors, tol=1e-4, max_iter=100, device='cpu'):
+    def __init__(self, n_components, n_features, n_factors, tol=1e-4, max_iter=150, device='cpu'):
         super().__init__()
         self.K = n_components
         self.D = n_features
@@ -25,10 +25,6 @@ class MFA(nn.Module):
     def fit(self, X):
         X = X.to(self.device)
         N = X.shape[0]
-        
-        # Better Initialization: Randomly sample points from data for means
-        indices = torch.randperm(N)[:self.K]
-        self.mu.data = X[indices].clone()
 
         prev_ll = -float('inf')
         
@@ -144,19 +140,16 @@ class MFA(nn.Module):
         Initialize mu and psi using K-Means++ (via scikit-learn) for better convergence.
         """
         from sklearn.cluster import KMeans
-        from sklearn.preprocessing import normalize
         
         X_cpu = X.cpu().numpy()
-        data_normalized = normalize(X_cpu, norm='l2')
         
         kmeans = KMeans(n_clusters=self.K, n_init=10, random_state=42)
-        labels = kmeans.fit_predict(data_normalized)
+        labels = kmeans.fit_predict(X_cpu)
         centroids = kmeans.cluster_centers_
         
         with torch.no_grad():
             self.mu.data = torch.tensor(centroids, dtype=torch.float32).to(self.mu.device)
 
-            # CHANGE 5: Assign the specific variance to each component directly
             for k in range(self.K):
                 cluster_points = X[labels == k]
                 if cluster_points.shape[0] > 1:
