@@ -27,23 +27,23 @@ class MFA(nn.Module):
         N = X.shape[0]
 
         prev_ll = -float('inf')
-        
-        for i in range(self.max_iter):
-            # --- E-Step ---
-            log_resp, log_likelihood = self.e_step(X)
-            current_ll = log_likelihood.mean()
-            
-            # --- M-Step ---
-            resp = torch.exp(log_resp) # (N, K)
-            self.m_step(X, resp)
-            
-            # Convergence check
-            diff = current_ll - prev_ll
-            if i > 0 and abs(diff) < self.tol:
-                break
-            prev_ll = current_ll
-            
-        self.final_ll = prev_ll * N 
+        with torch.no_grad():
+            for i in range(self.max_iter):
+                # --- E-Step ---
+                log_resp, log_likelihood = self.e_step(X)
+                current_ll = log_likelihood.mean()
+                
+                # --- M-Step ---
+                resp = torch.exp(log_resp) # (N, K)
+                self.m_step(X, resp)
+                
+                # Convergence check
+                diff = current_ll - prev_ll
+                if i > 0 and abs(diff) < self.tol:
+                    break
+                prev_ll = current_ll
+                
+            self.final_ll = prev_ll * N 
         
     def e_step(self, X):
         log_resps = []
@@ -117,23 +117,6 @@ class MFA(nn.Module):
                 
             except Exception as e:
                 pass # Keep old Lambda and Psi if decomposition fails
-
-    def bic(self, X):
-        # Calculate strict BIC
-        with torch.no_grad():
-            X = X.to(self.device)
-            _, log_likelihood = self.e_step(X)
-            total_ll = log_likelihood.sum().item()
-            
-            n_samples = X.shape[0]
-            
-            # Accurate Parameter Count for MFA
-            params_lambda = self.K * (self.D * self.q - 0.5 * self.q * (self.q - 1))
-            
-            # CHANGE 4: The noise parameter count is now K * D, not just D
-            n_params = (self.K - 1) + (self.K * self.D) + params_lambda + (self.K * self.D)
-            
-            return -2 * total_ll + n_params * math.log(n_samples)
     
     def initialize_parameters(self, X):
         """
