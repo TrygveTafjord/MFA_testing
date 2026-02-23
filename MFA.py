@@ -51,7 +51,7 @@ class MFA(nn.Module):
         for k in range(self.K):
             L_k = self.Lambda[k] 
             
-            # CHANGE 2: Extract the specific variance for component K
+            # Extract the specific variance for component K
             psi_k = torch.exp(self.log_psi[k]) + 1e-6
             
             # C_k = Lambda @ Lambda.T + Psi_k
